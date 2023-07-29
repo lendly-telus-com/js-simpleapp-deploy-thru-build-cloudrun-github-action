@@ -1,23 +1,20 @@
 # Use the official Node.js image as the base image
-FROM node:16
+FROM node:14-alpine
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Create a non-root user
-RUN useradd -m myuser
+# Copy the package.json and package-lock.json files to the container
+COPY package*.json ./
 
-# Set the ownership of the working directory to the new user
-RUN chown -R myuser:myuser /app
+# Install the app's dependencies
+RUN npm install
 
-# Switch to the non-root user
-USER myuser
+# Copy the rest of the app's files to the container
+COPY . .
 
-# Copy the calculator JavaScript file to the container's working directory
-COPY index.js ./
+# Expose port 8080
+EXPOSE 8080
 
-# Expose the port for any potential future interactions (not used in this case)
-EXPOSE 3000
-
-# Command to run the calculator.js script using Node.js
-CMD ["node", "index.js"]
+# Start the app
+CMD [ "npm", "start" ]
