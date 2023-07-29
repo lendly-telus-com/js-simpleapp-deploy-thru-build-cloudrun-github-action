@@ -34,12 +34,12 @@ jobs:
         with:
           context: .
           push: true
-          tags: us.gcr.io/${{ secrets.GCP_PROJECT_ID }}/gcf:${{ github.sha }}
+          tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-cicd:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy pogs-cicd \
-            --image=us.gcr.io/${{ secrets.GCP_PROJECT_ID }}/gcf:${{ github.sha }} \
+            --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-cicd:${{ github.sha }} \
             --platform=managed \
             --region=your-preferred-region \
             --allow-unauthenticated
