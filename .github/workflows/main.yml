@@ -35,6 +35,9 @@ jobs:
           context: .
           push: true
           tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-cicd:${{ github.sha }}
+          registry: gcr.io
+          additional_tags: |
+            gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-cicd:latest
 
       - name: Deploy to Cloud Run
         run: |
