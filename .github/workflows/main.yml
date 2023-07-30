@@ -1,48 +1,50 @@
-name: CI/CD with Cloud Build and Cloud Run
+name: CI/CD with Google Cloud Run
 
 on:
   push:
     branches:
       - main
 
+env:
+  PROJECT_ID: ${{secrets.GCP_PROJECT_ID}}
+  SERVICE_NAME: cicd-test
+  REGION: northamerica-northeast1 # Change to your desired region
+
 jobs:
   build_and_deploy:
-    name: Build and Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          fetch-depth: 0
+          node-version: '14' # You can change the version if needed
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docker image
+        run: docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
+
+      - name: Configure gcloud credentials
+        uses: google-github-actions/setup-gcloud@v0.3.0
         with:
-          credentials_json: ${{secrets.GCLOUD_SA_KEY}}
-          project_id: ${{secrets.GCP_PROJECT_ID}}
+          version: '350.0.0'
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCLOUD_SA_KEY }}
 
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+      - name: Authenticate Docker with gcloud
+        run: gcloud auth configure-docker -q
 
-      - name: Configure Docker
-        uses: docker/setup-buildx-action@v1
+      - name: Push Docker image to Google Container Registry
+        run: docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
 
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/hello:${{ github.sha }}
-          registry: gcr.io
-          additional_tags: |
-            gcr.io/${{ secrets.GCP_PROJECT_ID }}/hello:latest
-
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy pogs-cicd \
-            --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-cicd:${{ github.sha }} \
-            --platform=managed \
-            --region=northamerica-northeast1 \
-            --allow-unauthenticated
+      - name: Deploy to Google Cloud Run
+        run: gcloud run deploy ${{ env.SERVICE_NAME }} \
+          --image gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+          --platform managed \
+          --region ${{ env.REGION }} \
+          --allow-unauthenticated
