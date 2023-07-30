@@ -9,6 +9,7 @@ env:
   PROJECT_ID: ${{secrets.GCP_PROJECT_ID}}
   SERVICE_NAME: cicd-test
   REGION: northamerica-northeast1 # Change to your desired region
+  SA_KEY: ${{secrets.GCLOUD_SA_KEY}}
 
 jobs:
   build_and_deploy:
@@ -34,7 +35,7 @@ jobs:
         with:
           version: '350.0.0'
           project_id: ${{ env.PROJECT_ID }}
-          service_account_key: ${{ secrets.GCLOUD_SA_KEY }}
+          service_account_key: ${{ env.GCLOUD_SA_KEY }}
 
       - name: Authenticate Docker with gcloud
         run: gcloud auth configure-docker -q
